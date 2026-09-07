@@ -43,7 +43,7 @@ func Run() {
 
 		go sendResponse(ln, p.addr, sentResponse)
 
-		fmt.Println(sentResponse)
+		// fmt.Println(sentResponse)
 	}
 }
 

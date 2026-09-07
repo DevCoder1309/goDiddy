@@ -2,5 +2,7 @@ package domain
 
 
 type Record struct {
-	Record map[string]string
+	Name string
+	Type uint16
+	Addr string
 }

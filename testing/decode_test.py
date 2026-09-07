@@ -91,6 +91,8 @@ def decode_response(response):
         # A record
         if answer_type == 1 and rdlength == 4:
             ip = socket.inet_ntoa(rdata)
+        elif answer_type == 28 and rdlength == 16:
+            ip = socket.inet_ntop(socket.AF_INET6, rdata)
         else:
             ip = rdata
 

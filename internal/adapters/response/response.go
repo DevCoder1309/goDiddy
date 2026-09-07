@@ -2,6 +2,7 @@ package response
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"godiddy/internal/core/domain"
@@ -14,28 +15,51 @@ func ConstructResponse(h *domain.Header, q *domain.Question) (*domain.Response, 
 	resH := *h
 	resQ := *q
 
-	resH.Flags = 0x8180
-	resH.QDCount = 1
-	resH.ANCount = 1
-	resH.NSCount = 0
-	resH.ARCount = 0
-
 	ctx := context.Background()
 
 	records := service.RecordHelper(repository.St{}, ctx)
 
 	var rawIpData string
-
 	for _, itr := range *records{
-		val, ok := itr.Record[q.QName]
-		if ok {
-			rawIpData = val
+		if q.QName == itr.Name && q.QType == itr.Type {
+			rawIpData = itr.Addr
+			break
+		}else{
+			rawIpData = ""
 		}
 	}
 
-	rdata := net.ParseIP(rawIpData).To4()
+	var flags uint16
+	var anCount uint16
 
-	var rdlength uint16 = 4
+	if len(rawIpData) == 0 {
+		flags = 0x8183
+		anCount = 0
+	}else{
+		flags = 0x8180
+		anCount = 1
+	}
+
+
+	resH.Flags = flags
+	resH.QDCount = 1
+	resH.ANCount = anCount
+	resH.NSCount = 0
+	resH.ARCount = 0
+
+	var rawDataToParse net.IP
+	var rVarLength uint16
+	fmt.Println(q.QType)
+	if q.QType == uint16(28) {
+		rawDataToParse = net.ParseIP(rawIpData).To16()
+		rVarLength = 16
+		fmt.Println(rawDataToParse)
+	}else{
+		rawDataToParse = net.ParseIP(rawIpData).To4()
+		rVarLength = 4
+	}
+	rdata := rawDataToParse
+	var rdlength uint16 = rVarLength
 
 	answer := domain.Answer{
 		Name:     q.QName,
