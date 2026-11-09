@@ -22,35 +22,36 @@ func EncodeResponse(resp *domain.Response) []byte {
 		buf = append(buf, val)
 	}
 	
-	name := encodeName.EncodeName(resp.Question.QName)
-	buf = append(buf, name...)
+	for _, val := range(resp.Question){
+		name := encodeName.EncodeName(val.QName)
+		buf = append(buf, name...)
 
-	qtype := make([]byte, 2)
-	binary.BigEndian.PutUint16(qtype, resp.Question.QType)
-	buf = append(buf, qtype...)
+		qtype := make([]byte, 2)
+		binary.BigEndian.PutUint16(qtype, val.QType)
+		buf = append(buf, qtype...)
 
-	qclass := make([]byte, 2)
-	binary.BigEndian.PutUint16(qclass, resp.Question.QClass)
-	buf = append(buf, qclass...)
+		qclass := make([]byte, 2)
+		binary.BigEndian.PutUint16(qclass, val.QClass)
+		buf = append(buf, qclass...)
 
-	for _, answers := range resp.Answers {
-		pointer := uint16(0xC000 | 12)
-		
-		// tempName := encodeName.EncodeName(answers.Name)
-		rightShiftVal := byte(pointer >> 8)
-		leftVal := byte(pointer)
-		buf = append(buf, rightShiftVal, leftVal)
+		for _, answers := range resp.Answers {
+			pointer := uint16(0xC000 | 12)
+			
+			// tempName := encodeName.EncodeName(answers.Name)
+			rightShiftVal := byte(pointer >> 8)
+			leftVal := byte(pointer)
+			buf = append(buf, rightShiftVal, leftVal)
 
-		tmp := make([]byte, 10)
+			tmp := make([]byte, 10)
 
-		binary.BigEndian.PutUint16(tmp[0:2], answers.Type)
-		binary.BigEndian.PutUint16(tmp[2:4], answers.Class)
-		binary.BigEndian.PutUint32(tmp[4:8], answers.TTL)
-		binary.BigEndian.PutUint16(tmp[8:10], answers.RDLength)
+			binary.BigEndian.PutUint16(tmp[0:2], answers.Type)
+			binary.BigEndian.PutUint16(tmp[2:4], answers.Class)
+			binary.BigEndian.PutUint32(tmp[4:8], answers.TTL)
+			binary.BigEndian.PutUint16(tmp[8:10], answers.RDLength)
 
-		buf = append(buf, tmp...)
-		buf = append(buf, answers.RData...)
+			buf = append(buf, tmp...)
+			buf = append(buf, answers.RData...)
+		}
 	}
-
 	return buf
 }

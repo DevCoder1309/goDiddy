@@ -2,13 +2,13 @@ package domain
 
 type Response struct {
 	Header      Header
-	Question    Question
+	Question    []Question
 	Answers     []Answer
 	Authorities []string
 	Additionals []string
 }
 
-func NewResponse(h Header, q Question, ans []Answer, auth, add []string) *Response {
+func NewResponse(h Header, q []Question, ans []Answer, auth, add []string) *Response {
 	r := Response{
 		Header:      h,
 		Question:    q,

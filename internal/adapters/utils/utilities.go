@@ -6,7 +6,7 @@ import (
 	"godiddy/internal/core/domain"
 )
 
-func Pass(h *domain.Header, q *domain.Question) (*domain.Response, error){
+func Pass(h *domain.Header, q *[]domain.Question) (*domain.Response, error){
 	r, err := response.ConstructResponse(h, q)
 
 	if err != nil {

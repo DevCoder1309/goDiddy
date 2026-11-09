@@ -5,6 +5,7 @@ import (
 	"godiddy/internal/adapters/decoder"
 	"godiddy/internal/adapters/encode"
 	"godiddy/internal/adapters/utils"
+	"godiddy/internal/core/domain"
 	"net"
 	"os"
 )
@@ -28,20 +29,31 @@ func Run() {
 		go listenAddr(ln, c)
 
 		p := <-c
+		
+		// header, _, err := decoder.Decode(decoder.DecodeStruct{}, p.data)
+		header, err := decoder.DecodeStruct.DecodeHeader(decoder.DecodeStruct{}, p.data)
 
-		header, question, err := decoder.Decode(decoder.DecodeStruct{}, p.data)
 		if err != nil {
 			os.Exit(1)
 		}
 
-		resp, err := utils.Pass(header, question)
+		var response *domain.Response
+
+		questions, err:= decoder.DecodeStruct.DecodeQuestion(decoder.DecodeStruct{}, p.data, header.QDCount)
+		response, err = utils.Pass(header, questions)
 		if err != nil {
 			os.Exit(1)
 		}
-
-		sentResponse := encode.EncodeResponse(resp)
-
+		sentResponse := encode.EncodeResponse(response)
 		go sendResponse(ln, p.addr, sentResponse)
+
+		// if err != nil {
+		// 	os.Exit(1)
+		// }
+
+		// sentResponse := encode.EncodeResponse(response)
+
+		// go sendResponse(ln, p.addr, sentResponse)
 
 		// fmt.Println(sentResponse)
 	}

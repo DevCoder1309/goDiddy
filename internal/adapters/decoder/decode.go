@@ -19,7 +19,7 @@ func Decode(d ports.DecodeInterface, buf []byte) (*domain.Header, *domain.Questi
 	}
 
 	questionResult, err := d.DecodeQuestion(buf)
-	fmt.Println(questionResult)
+	// fmt.Println(questionResult)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -41,33 +41,44 @@ func (d DecodeStruct) DecodeHeader(buf []byte) ( *domain.Header, error) {
 	return data, nil
 }
 
-func (d DecodeStruct) DecodeQuestion(buf []byte) (*domain.Question, error) {
-    var qname string
-    offset := 12
+func (d DecodeStruct) DecodeQuestion(buf []byte, count uint16) (*[]domain.Question, error) {
+    var masterdata []domain.Question
+    mainPtr := 12
 
-    for {
-        length := int(buf[offset])
-        offset++
+    for range count {
+        var qname string
+        offset := mainPtr
 
-        if length == 0 {
-            break
+        for {
+            length := int(buf[offset])
+            offset++
+
+            if length == 0 {
+                break
+            }
+
+            if len(qname) > 0 {
+                qname += "."
+            }
+
+            qname += string(buf[offset : offset+length])
+            offset += length
         }
 
-        if len(qname) > 0 {
-            qname += "."
-        }
+        qtype := binary.BigEndian.Uint16(buf[offset : offset+2])
+        offset += 2
 
-        qname += string(buf[offset : offset+length])
-        offset += length
+        qclass := binary.BigEndian.Uint16(buf[offset : offset+2])
+        offset += 2
+
+        data := domain.NewQuestion(qname, qtype, qclass)
+        masterdata = append(masterdata, *data)
+
+        mainPtr = offset
     }
 
-    qtype := binary.BigEndian.Uint16(buf[offset : offset+2])
-    offset += 2
+	fmt.Println(masterdata)
 
-    qclass := binary.BigEndian.Uint16(buf[offset : offset+2])
-
-    data := domain.NewQuestion(qname, qtype, qclass)
-
-    return data, nil
+    return &masterdata, nil
 }
 
