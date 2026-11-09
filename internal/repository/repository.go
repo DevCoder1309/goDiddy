@@ -24,9 +24,16 @@ func (s St) Records(ctx context.Context) *[]domain.Record {
 		Type: 28,
 		Addr: "2001:4860:4860::8888",
 	}
+
+	record4 := domain.Record{
+		Name: "www.google.com",
+		Type: 5,
+		Addr: "google.com",
+	}
 	RecordSlice = append(RecordSlice, record1)
 	RecordSlice = append(RecordSlice, record2)
 	RecordSlice = append(RecordSlice, record3)
+	RecordSlice = append(RecordSlice, record4)
 
 	return &RecordSlice
 }

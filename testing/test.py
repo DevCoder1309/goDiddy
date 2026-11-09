@@ -12,7 +12,7 @@ def build_query(domain):
     qname = b''.join([bytes([len(part)]) + part.encode() for part in domain.split('.')]) + b'\x00'
     
     # 3. Type (A = 0x0001) and Class (IN = 0x0001)
-    qtype_qclass = b'\x00\x1c\x00\x01'
+    qtype_qclass = b'\x00\x05\x00\x01'
     
     return header + qname + qtype_qclass
 
@@ -36,4 +36,4 @@ def query_dns(domain, server_ip="127.0.0.1"):
         sock.close()
 
 if __name__ == "__main__":
-    query_dns("google.com")
+    query_dns("www.google.com")

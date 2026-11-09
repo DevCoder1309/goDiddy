@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"godiddy/internal/adapters/encodeName"
 	"godiddy/internal/core/domain"
 	"godiddy/internal/repository"
 	"godiddy/internal/service"
@@ -40,7 +41,7 @@ func ConstructResponse(h *domain.Header, q *domain.Question) (*domain.Response, 
 		anCount = 1
 	}
 
-
+	// fmt.Println(q.QName)
 	resH.Flags = flags
 	resH.QDCount = 1
 	resH.ANCount = anCount
@@ -49,14 +50,18 @@ func ConstructResponse(h *domain.Header, q *domain.Question) (*domain.Response, 
 
 	var rawDataToParse net.IP
 	var rVarLength uint16
-	fmt.Println(q.QType)
+	// fmt.Println(q.QType)
 	if q.QType == uint16(28) {
 		rawDataToParse = net.ParseIP(rawIpData).To16()
 		rVarLength = 16
-		fmt.Println(rawDataToParse)
-	}else{
+		// fmt.Println(rawDataToParse)
+	}else if(q.QType == uint16(1)){
 		rawDataToParse = net.ParseIP(rawIpData).To4()
 		rVarLength = 4
+	}else if(q.QType == uint16(5)){
+		rawDataToParse = encodeName.EncodeName(rawIpData)
+		// fmt.Printf("this is the raw data %v", rawDataToParse)
+		rVarLength = uint16(len(encodeName.EncodeName(rawIpData)))
 	}
 	rdata := rawDataToParse
 	var rdlength uint16 = rVarLength
@@ -77,6 +82,8 @@ func ConstructResponse(h *domain.Header, q *domain.Question) (*domain.Response, 
 		[]string{},
 		[]string{},
 	)
+
+	fmt.Println(res)
 
 	return res, nil
 }

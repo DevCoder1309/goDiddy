@@ -3,6 +3,7 @@ package decoder
 
 import (
 	"encoding/binary"
+	"fmt"
 	"godiddy/internal/core/domain"
 	"godiddy/internal/ports"
 )
@@ -18,7 +19,7 @@ func Decode(d ports.DecodeInterface, buf []byte) (*domain.Header, *domain.Questi
 	}
 
 	questionResult, err := d.DecodeQuestion(buf)
-
+	fmt.Println(questionResult)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -41,44 +42,32 @@ func (d DecodeStruct) DecodeHeader(buf []byte) ( *domain.Header, error) {
 }
 
 func (d DecodeStruct) DecodeQuestion(buf []byte) (*domain.Question, error) {
-	// var qname string
+    var qname string
+    offset := 12
 
-	// for {
-	// 	length := int(buf[offset]) // one byte
-	// 	offset++
+    for {
+        length := int(buf[offset])
+        offset++
 
-	// 	if length == 0 {
-	// 		break
-	// 	}
+        if length == 0 {
+            break
+        }
 
-	// 	if len(qname) > 0 {
-	// 		qname += "."
-	// 	}
+        if len(qname) > 0 {
+            qname += "."
+        }
 
-	// 	qname += string(buf[offset : offset+length])
-	// 	offset += length
-	// }
+        qname += string(buf[offset : offset+length])
+        offset += length
+    }
 
-	firstByteLength := int(buf[12])
+    qtype := binary.BigEndian.Uint16(buf[offset : offset+2])
+    offset += 2
 
-	qnameDomain := string(buf[13:firstByteLength + 13])
+    qclass := binary.BigEndian.Uint16(buf[offset : offset+2])
 
-	secondByteLength := int(buf[firstByteLength + 13])
+    data := domain.NewQuestion(qname, qtype, qclass)
 
-	qnameTLD := string(buf[firstByteLength + 14: secondByteLength + firstByteLength + 14])
-
-	offsetF := secondByteLength + firstByteLength + 15
-
-	qtype := binary.BigEndian.Uint16(buf[offsetF : offsetF+2])
-	
-	offsetF += 2
-
-	qclass := binary.BigEndian.Uint16(buf[offsetF : offsetF+2])
-
-	qname := qnameDomain + "." + qnameTLD
-
-	data := domain.NewQuestion(qname, qtype, qclass)
-
-	return data, nil
+    return data, nil
 }
 

@@ -3,7 +3,7 @@ package encode
 import (
 	"encoding/binary"
 	"godiddy/internal/core/domain"
-	"godiddy/internal/adapters/utils"
+	"godiddy/internal/adapters/encodeName"
 )
 
 
@@ -22,7 +22,7 @@ func EncodeResponse(resp *domain.Response) []byte {
 		buf = append(buf, val)
 	}
 	
-	name := utils.EncodeName(resp.Question.QName)
+	name := encodeName.EncodeName(resp.Question.QName)
 	buf = append(buf, name...)
 
 	qtype := make([]byte, 2)
@@ -34,9 +34,12 @@ func EncodeResponse(resp *domain.Response) []byte {
 	buf = append(buf, qclass...)
 
 	for _, answers := range resp.Answers {
-		tempName := utils.EncodeName(answers.Name)
-
-		buf = append(buf, tempName...)
+		pointer := uint16(0xC000 | 12)
+		
+		// tempName := encodeName.EncodeName(answers.Name)
+		rightShiftVal := byte(pointer >> 8)
+		leftVal := byte(pointer)
+		buf = append(buf, rightShiftVal, leftVal)
 
 		tmp := make([]byte, 10)
 

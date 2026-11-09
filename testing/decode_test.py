@@ -2,10 +2,34 @@ import socket
 import struct
 
 
+def decode_name(response, offset):
+    labels = []
+    original_offset = None
+
+    while True:
+        length = response[offset]
+
+        if length & 0xC0 == 0xC0:
+            pointer = ((length & 0x3F) << 8) | response[offset + 1]
+
+            if original_offset is None:
+                original_offset = offset + 2
+
+            offset = pointer
+            continue
+
+        offset += 1
+
+        if length == 0:
+            break
+
+        labels.append(response[offset:offset + length].decode())
+        offset += length
+
+    return ".".join(labels), original_offset if original_offset is not None else offset
+
+
 def decode_response(response):
-    # ----------------
-    # Header
-    # ----------------
     transaction_id, flags, qdcount, ancount, nscount, arcount = struct.unpack(
         "!6H", response[:12]
     )
@@ -18,83 +42,47 @@ def decode_response(response):
     print("Authority:", nscount)
     print("Additional:", arcount)
 
-    # ----------------
-    # Question
-    # ----------------
     offset = 12
 
-    labels = []
+    for _ in range(qdcount):
+        qname, offset = decode_name(response, offset)
 
-    while True:
-        length = response[offset]
-        offset += 1
+        qtype, qclass = struct.unpack("!HH", response[offset:offset + 4])
+        offset += 4
 
-        if length == 0:
-            break
+        print("\nQUESTION")
+        print("Name:", qname)
+        print("Type:", qtype)
+        print("Class:", qclass)
 
-        labels.append(
-            response[offset:offset + length].decode()
-        )
-        offset += length
-
-    qname = ".".join(labels)
-
-    qtype, qclass = struct.unpack(
-        "!HH", response[offset:offset + 4]
-    )
-    offset += 4
-
-    print("\nQUESTION")
-    print("Name:", qname)
-    print("Type:", qtype)
-    print("Class:", qclass)
-
-    # ----------------
-    # Answer
-    # ----------------
     for i in range(ancount):
-
-        labels = []
-
-        while True:
-            length = response[offset]
-            offset += 1
-
-            if length == 0:
-                break
-
-            labels.append(
-                response[offset:offset + length].decode()
-            )
-            offset += length
-
-        name = ".".join(labels)
+        name, offset = decode_name(response, offset)
 
         answer_type, answer_class = struct.unpack(
             "!HH", response[offset:offset + 4]
         )
         offset += 4
 
-        ttl = struct.unpack(
-            "!I", response[offset:offset + 4]
-        )[0]
+        ttl = struct.unpack("!I", response[offset:offset + 4])[0]
         offset += 4
 
-        rdlength = struct.unpack(
-            "!H", response[offset:offset + 2]
-        )[0]
+        rdlength = struct.unpack("!H", response[offset:offset + 2])[0]
         offset += 2
 
         rdata = response[offset:offset + rdlength]
         offset += rdlength
 
-        # A record
         if answer_type == 1 and rdlength == 4:
-            ip = socket.inet_ntoa(rdata)
+            decoded_data = socket.inet_ntoa(rdata)
+
         elif answer_type == 28 and rdlength == 16:
-            ip = socket.inet_ntop(socket.AF_INET6, rdata)
+            decoded_data = socket.inet_ntop(socket.AF_INET6, rdata)
+
+        elif answer_type == 5:
+            decoded_data, _ = decode_name(response, offset - rdlength)
+
         else:
-            ip = rdata
+            decoded_data = rdata
 
         print("\nANSWER")
         print("Name:", name)
@@ -102,4 +90,4 @@ def decode_response(response):
         print("Class:", answer_class)
         print("TTL:", ttl)
         print("RDLength:", rdlength)
-        print("RData:", ip)
+        print("RData:", decoded_data)
